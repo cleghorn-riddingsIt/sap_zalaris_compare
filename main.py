@@ -1,4 +1,9 @@
 import pandas as pd
+import numpy as np
+import calendar
+
+# Define the threshold value
+threshold_hours = 7.5
 
 # Step 2: Read the CSV file into a DataFrame
 file_path = 'data/SAP Hours.csv'
@@ -31,7 +36,35 @@ pivot_df = df.pivot_table(
 ).reset_index()
 
 # Step 8: Add the Investigate column
-pivot_df['Investigate'] = pivot_df['Hours'] > 7.5
+pivot_df['Investigate'] = pivot_df['Hours'] > threshold_hours
 
 # Step 9: Save the pivot table DataFrame back to a CSV file
 pivot_df.to_csv('data/SAP Hours_pivot.csv', index=False, encoding='utf-8-sig')
+
+# Step 10: Extract month and year from Date
+df['YearMonth'] = df['Date'].dt.to_period('M')
+
+# Step 11: Create a new pivot table that sums up all the hours per Employee for any month
+monthly_hours_df = df.pivot_table(
+    values='Hours',
+    index=['Employee', 'YearMonth'],
+    aggfunc='sum'
+).reset_index()
+
+# Step 12: Calculate the number of working days for each month
+def working_days_in_month(year, month):
+    month_range = calendar.monthrange(year, month)
+    return np.busday_count(f'{year}-{month:02d}-01', f'{year}-{month:02d}-{month_range[1]}')  # Monday to Friday
+
+# Step 13: Calculate the maximum working hours per month
+monthly_hours_df['YearMonth'] = monthly_hours_df['YearMonth'].astype(str)
+monthly_hours_df['Year'] = monthly_hours_df['YearMonth'].str[:4].astype(int)
+monthly_hours_df['Month'] = monthly_hours_df['YearMonth'].str[5:7].astype(int)
+monthly_hours_df['WorkingDays'] = monthly_hours_df.apply(lambda row: working_days_in_month(row['Year'], row['Month']), axis=1)
+monthly_hours_df['MaxWorkingHours'] = monthly_hours_df['WorkingDays'] * threshold_hours
+
+# Step 14: Add the Investigate column
+monthly_hours_df['Investigate'] = monthly_hours_df['Hours'] > monthly_hours_df['MaxWorkingHours']
+
+# Step 15: Save the monthly hours pivot table DataFrame to a CSV file
+monthly_hours_df.to_csv('data/SAP Hours_monthly.csv', index=False, encoding='utf-8-sig')
