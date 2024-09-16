@@ -54,15 +54,55 @@ def calculate_monthly_hours(df):
     
     return monthly_df
 
+def compare_hours(df1, df2):
+    results = []
+    for _, row in df1.iterrows():
+        date = row['Date']
+        employee = row['Employee']
+        hours_df1 = row['Hours']
+        
+        # Find the corresponding row in df2
+        df2_row = df2[(df2['Date'] == date) & (df2['Employee'] == employee)]
+        
+        if not df2_row.empty:
+            hours_df2 = df2_row['Hours'].values[0]
+            if hours_df1 > hours_df2:
+                comparison = 1
+            elif hours_df1 < hours_df2:
+                comparison = 2
+            else:
+                comparison = 0
+            
+            if comparison != 0:
+                results.append({
+                    'Date': date,
+                    'Employee': employee,
+                    'Zalaris Hours': hours_df1,
+                    'SAP Hours': hours_df2,
+                    'Comparison': comparison
+                })
+    
+    results_df = pd.DataFrame(results)
+    return results_df
+
 def main():
+    results={}
     for source in ['SAP', 'Zalaris']:
         df = read_and_preprocess(f'data/{source} Hours.csv', is_sap=(source == 'SAP'))
         
-        pivot_df = create_pivot(df, is_sap=(source == 'SAP'))
-        pivot_df.to_csv(f'data/{source} Hours_pivot.csv', index=False, encoding='utf-8-sig')
+        daily_df = create_pivot(df, is_sap=(source == 'SAP'))
+        daily_df.to_csv(f'data/{source} Hours_pivot.csv', index=False, encoding='utf-8-sig')
         
         monthly_df = calculate_monthly_hours(df)
         monthly_df.to_csv(f'data/{source} Hours_monthly.csv', index=False, encoding='utf-8-sig')
+        results[f'{source}_Daily'] = daily_df
+        results[f'{source}_Monthly'] = monthly_df
+        
+    comparison_df = compare_hours(results['SAP_Daily'], results['Zalaris_Daily'])
+    comparison_df.to_csv('data/Comparison_Results.csv', index=False, encoding='utf-8-sig')
+
+        
+    
 
 if __name__ == "__main__":
     main()
