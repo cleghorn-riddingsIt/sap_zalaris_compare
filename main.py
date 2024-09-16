@@ -6,6 +6,9 @@ from typing import Dict, Any, List
 from pathlib import Path
 import sys
 
+## To create an executable file from this script, run the following command in the terminal:
+##pyinstaller --onefile --hidden-import 'module_name' main.py
+
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
