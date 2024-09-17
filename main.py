@@ -60,7 +60,9 @@ def compare_hours(df1, df2):
         date = row['Date']
         employee = row['Employee']
         hours_df1 = row['Hours']
-        
+        #assume no match
+        comparison=3
+        hours_df2=-1 
         # Find the corresponding row in df2
         df2_row = df2[(df2['Date'] == date) & (df2['Employee'] == employee)]
         
@@ -71,16 +73,16 @@ def compare_hours(df1, df2):
             elif hours_df1 < hours_df2:
                 comparison = 2
             else:
-                comparison = 3
+                comparison = 0
             
-            if comparison != 0:
+        if comparison != 0:
                 results.append({
                     'Date': date,
                     'Employee': employee,
                     'Zalaris Hours': hours_df1,
                     'SAP Hours': hours_df2,
                     'Comparison': comparison
-                })
+            })
     
     results_df = pd.DataFrame(results)
     return results_df
@@ -98,7 +100,7 @@ def main():
         results[f'{source}_Daily'] = daily_df
         results[f'{source}_Monthly'] = monthly_df
         
-    comparison_df = compare_hours(results['SAP_Daily'], results['Zalaris_Daily'])
+    comparison_df = compare_hours(results['Zalaris_Daily'],results['SAP_Daily'])
     comparison_df.to_csv('data/Comparison_Results.csv', index=False, encoding='utf-8-sig')
 
         

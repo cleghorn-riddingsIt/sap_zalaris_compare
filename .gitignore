@@ -1,3 +1,4 @@
-/data/*.*
-/build/*.*
-/dist/*.*
+*.csv
+/build/
+/dist/
+/data/*.csv
