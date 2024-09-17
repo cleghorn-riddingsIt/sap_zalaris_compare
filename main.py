@@ -71,7 +71,7 @@ def compare_hours(df1, df2):
             elif hours_df1 < hours_df2:
                 comparison = 2
             else:
-                comparison = 0
+                comparison = 3
             
             if comparison != 0:
                 results.append({
