@@ -62,7 +62,7 @@ def compare_hours(df1, df2, is_monthly=False):
         employee = row['Employee']
         hours_df1 = row['Hours']
         #assume no match
-        comparison=3
+        comparison='Hours not found in SAP'
         hours_df2=-1 
         # Find the corresponding row in df2
         df2_row = df2[(df2[datecol] == date) & (df2['Employee'] == employee)]
@@ -70,13 +70,13 @@ def compare_hours(df1, df2, is_monthly=False):
         if not df2_row.empty:
             hours_df2 = df2_row['Hours'].values[0]
             if hours_df1 > hours_df2:
-                comparison = 1
+                comparison = 'Zalaris Hours Higher'
             elif hours_df1 < hours_df2:
-                comparison = 2
+                comparison = 'SAP Hours Higher'
             else:
-                comparison = 0
+                comparison = 'Equal Hours'
             
-        if comparison != 0:
+        if comparison != 'Equal Hours':
                 results.append({
                     'Date': date,
                     'Employee': employee,
@@ -87,6 +87,8 @@ def compare_hours(df1, df2, is_monthly=False):
     
     results_df = pd.DataFrame(results)
     return results_df
+def export_to_excel(df, filename):
+    df.to_excel(filename, index=False)
 
 def main():
     results={}
@@ -94,17 +96,17 @@ def main():
         df = read_and_preprocess(f'data/{source} Hours.csv', is_sap=(source == 'SAP'))
         
         daily_df = create_pivot(df, is_sap=(source == 'SAP'))
-        daily_df.to_excel(f'data/{source} Hours_daily.xlsx', index=False)
+        export_to_excel(daily_df,f'data/{source} Hours_daily.xlsx')
         
         monthly_df = calculate_monthly_hours(df)
-        monthly_df.to_excel(f'data/{source} Hours_monthly.xlsx', index=False)
+        export_to_excel(monthly_df,f'data/{source} Hours_monthly.xlsx')
         results[f'{source}_Daily'] = daily_df
         results[f'{source}_Monthly'] = monthly_df
         
     comparison_df = compare_hours(results['Zalaris_Daily'],results['SAP_Daily'])
-    comparison_df.to_excel('data/Comparison_Daily.xlsx', index=False)
+    export_to_excel(comparison_df,'data/Comparison_Daily.xlsx')
     comparison_df = compare_hours(results['Zalaris_Monthly'],results['SAP_Monthly'],True)
-    comparison_df.to_excel('data/Comparison_Monthly.xlsx', index=False)
+    export_to_excel(comparison_df,'data/Comparison_Monthly.xlsx')
 
         
     
