@@ -2,7 +2,9 @@
 import pandas as pd
 import numpy as np
 from calendar import monthrange
+import logging
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 THRESHOLD_HOURS = 7.5
 
 def read_and_preprocess(file_path, is_sap=True):
@@ -88,7 +90,12 @@ def compare_hours(df1, df2, is_monthly=False):
     results_df = pd.DataFrame(results)
     return results_df
 def export_to_excel(df, filename):
-    df.to_excel(filename, index=False)
+    try:
+        with pd.ExcelWriter(filename, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False)
+        logging.info(f"DataFrame successfully exported to {filename}")
+    except Exception as e:
+        logging.error(f"Failed to export DataFrame to {filename}: {e}")
 
 def main():
     results={}
