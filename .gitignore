@@ -1,4 +1,4 @@
 *.csv
 /build/
 /dist/
-/data/*.csv
+/data/*.*
