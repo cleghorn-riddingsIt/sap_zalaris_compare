@@ -54,17 +54,18 @@ def calculate_monthly_hours(df):
     
     return monthly_df
 
-def compare_hours(df1, df2):
+def compare_hours(df1, df2, is_monthly=False):
     results = []
+    datecol = 'YearMonth' if is_monthly else 'Date'
     for _, row in df1.iterrows():
-        date = row['Date']
+        date = row[datecol]
         employee = row['Employee']
         hours_df1 = row['Hours']
         #assume no match
         comparison=3
         hours_df2=-1 
         # Find the corresponding row in df2
-        df2_row = df2[(df2['Date'] == date) & (df2['Employee'] == employee)]
+        df2_row = df2[(df2[datecol] == date) & (df2['Employee'] == employee)]
         
         if not df2_row.empty:
             hours_df2 = df2_row['Hours'].values[0]
@@ -93,7 +94,7 @@ def main():
         df = read_and_preprocess(f'data/{source} Hours.csv', is_sap=(source == 'SAP'))
         
         daily_df = create_pivot(df, is_sap=(source == 'SAP'))
-        daily_df.to_csv(f'data/{source} Hours_pivot.csv', index=False, encoding='utf-8-sig')
+        daily_df.to_csv(f'data/{source} Hours_daily.csv', index=False, encoding='utf-8-sig')
         
         monthly_df = calculate_monthly_hours(df)
         monthly_df.to_csv(f'data/{source} Hours_monthly.csv', index=False, encoding='utf-8-sig')
@@ -101,7 +102,9 @@ def main():
         results[f'{source}_Monthly'] = monthly_df
         
     comparison_df = compare_hours(results['Zalaris_Daily'],results['SAP_Daily'])
-    comparison_df.to_csv('data/Comparison_Results.csv', index=False, encoding='utf-8-sig')
+    comparison_df.to_csv('data/Comparison_Daily.csv', index=False, encoding='utf-8-sig')
+    comparison_df = compare_hours(results['Zalaris_Monthly'],results['SAP_Monthly'],True)
+    comparison_df.to_csv('data/Comparison_Monthly.csv', index=False, encoding='utf-8-sig')
 
         
     
