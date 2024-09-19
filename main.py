@@ -7,6 +7,10 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 THRESHOLD_HOURS = 8
 
+
+##TODO Add code to compare the clockinout hours to the actual hours
+##TODO Save Zalaris codes compared to SAP codes
+
 def read_and_preprocess(file_path, is_sap=True):
     df = pd.read_csv(file_path, encoding='utf-8-sig')
 
