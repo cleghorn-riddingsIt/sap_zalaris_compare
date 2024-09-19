@@ -5,11 +5,15 @@ from calendar import monthrange
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-THRESHOLD_HOURS = 7.5
+THRESHOLD_HOURS = 8
 
 def read_and_preprocess(file_path, is_sap=True):
     df = pd.read_csv(file_path, encoding='utf-8-sig')
-    
+    if is_sap:
+        df['Att./abs. type'] = df['Att./abs. type'].astype(str)
+        export_to_excel(df[df['Att./abs. type'] == '800'],'data/output/clockinout_hours.xlsx') ##- save the clock in clock out rows
+        df = df[df['Att./abs. type'] != '800'] ##remove the clock in clock out columns'
+        export_to_excel(df,'data/output/wowbs_hours.xlsx') ##- actual wbs or wo hours
     common_renames = {
         'Personnel No.': 'ID',
         'Empl./appl.name' if is_sap else 'Name of employee or applicant': 'Employee',
@@ -34,9 +38,9 @@ def read_and_preprocess(file_path, is_sap=True):
     
     return df
 
-def create_pivot(df, is_sap=True):
-    values = ['Hours', 'AA text', 'Receiver', 'Short Text'] if is_sap else ['Hours', 'AA code']
-    agg_func = {'Hours': 'sum', 'AA text': 'first', 'Receiver': 'first', 'Short Text': 'first'} if is_sap else {'Hours': 'sum', 'AA code': 'first'}
+def create_daily_hours(df, is_sap=True):
+    values = ['Hours']
+    agg_func = {'Hours': 'sum'}
     
     pivot_df = df.pivot_table(values=values, index=['Date', 'Employee'], aggfunc=agg_func).reset_index()
     pivot_df['Investigate'] = pivot_df['Hours'] > THRESHOLD_HOURS
@@ -71,9 +75,9 @@ def compare_hours(df1, df2, is_monthly=False):
         
         if not df2_row.empty:
             hours_df2 = df2_row['Hours'].values[0]
-            if hours_df1 > hours_df2:
+            if (hours_df1 - hours_df2)>0.5:
                 comparison = 'Zalaris Hours Higher'
-            elif hours_df1 < hours_df2:
+            elif (hours_df2 - hours_df1)>0.5:
                 comparison = 'SAP Hours Higher'
             else:
                 comparison = 'Equal Hours'
@@ -102,11 +106,11 @@ def main():
     for source in ['SAP', 'Zalaris']:
         df = read_and_preprocess(f'data/{source} Hours.csv', is_sap=(source == 'SAP'))
         
-        daily_df = create_pivot(df, is_sap=(source == 'SAP'))
-        export_to_excel(daily_df,f'data/output{source} Hours_daily.xlsx')
+        daily_df = create_daily_hours(df, is_sap=(source == 'SAP'))
+        export_to_excel(daily_df,f'data/output/{source} Hours_daily.xlsx')
         
         monthly_df = calculate_monthly_hours(df)
-        export_to_excel(monthly_df,f'data/output{source} Hours_monthly.xlsx')
+        export_to_excel(monthly_df,f'data/output/{source} Hours_monthly.xlsx')
         results[f'{source}_Daily'] = daily_df
         results[f'{source}_Monthly'] = monthly_df
         
