@@ -103,17 +103,17 @@ def main():
         df = read_and_preprocess(f'data/{source} Hours.csv', is_sap=(source == 'SAP'))
         
         daily_df = create_pivot(df, is_sap=(source == 'SAP'))
-        export_to_excel(daily_df,f'data/{source} Hours_daily.xlsx')
+        export_to_excel(daily_df,f'data/output{source} Hours_daily.xlsx')
         
         monthly_df = calculate_monthly_hours(df)
-        export_to_excel(monthly_df,f'data/{source} Hours_monthly.xlsx')
+        export_to_excel(monthly_df,f'data/output{source} Hours_monthly.xlsx')
         results[f'{source}_Daily'] = daily_df
         results[f'{source}_Monthly'] = monthly_df
         
     comparison_df = compare_hours(results['Zalaris_Daily'],results['SAP_Daily'])
-    export_to_excel(comparison_df,'data/Comparison_Daily.xlsx')
+    export_to_excel(comparison_df,'data/output/Comparison_Daily.xlsx')
     comparison_df = compare_hours(results['Zalaris_Monthly'],results['SAP_Monthly'],True)
-    export_to_excel(comparison_df,'data/Comparison_Monthly.xlsx')
+    export_to_excel(comparison_df,'data/output/Comparison_Monthly.xlsx')
 
         
     
