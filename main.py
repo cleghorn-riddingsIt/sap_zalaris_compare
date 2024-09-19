@@ -9,11 +9,8 @@ THRESHOLD_HOURS = 8
 
 def read_and_preprocess(file_path, is_sap=True):
     df = pd.read_csv(file_path, encoding='utf-8-sig')
-    if is_sap:
-        df['Att./abs. type'] = df['Att./abs. type'].astype(str)
-        export_to_excel(df[df['Att./abs. type'] == '800'],'data/output/clockinout_hours.xlsx') ##- save the clock in clock out rows
-        df = df[df['Att./abs. type'] != '800'] ##remove the clock in clock out columns'
-        export_to_excel(df,'data/output/wowbs_hours.xlsx') ##- actual wbs or wo hours
+
+
     common_renames = {
         'Personnel No.': 'ID',
         'Empl./appl.name' if is_sap else 'Name of employee or applicant': 'Employee',
@@ -26,15 +23,20 @@ def read_and_preprocess(file_path, is_sap=True):
     }
     
     df = df.rename(columns=common_renames | (sap_specific if is_sap else {}))
-    
-    df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
-    
     if is_sap:
         df['Hours'] = df['Hours'].str.replace(' H', '').astype(float)
+        df['AA code'] = df['AA code'].astype(str)
+        export_to_excel(df[df['AA code'] == '800'],'data/output/clockinout_hours.xlsx') ##- save the clock in clock out rows
+        df = df[df['AA code'] != '800'] ##remove the clock in clock out columns'
+        export_to_excel(df,'data/output/wowbs_hours.xlsx') ##- actual wbs or wo hours
         for col in ['Start time', 'End time']:
             df[col] = pd.to_datetime(df[col], format='%H:%M:%S', errors='coerce').dt.time
     else:
-        df['Approval date'] = pd.to_datetime(df['Approval date'], format='%d/%m/%Y')
+        df['Approval date'] = pd.to_datetime(df['Approval date'], format='%d/%m/%Y',errors='coerce')
+    
+    df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
+    
+  
     
     return df
 
