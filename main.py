@@ -8,30 +8,28 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 THRESHOLD_HOURS = 8
 
 
-##TODO Add code to compare the clockinout hours to the actual hours
-##TODO Save Zalaris codes compared to SAP codes
 
-def read_and_preprocess(file_path, is_sap=True):
+def read_and_preprocess(file_path, is_zalaris=True):
     df = pd.read_csv(file_path, encoding='utf-8-sig')
 
 
     common_renames = {
         'Personnel No.': 'ID',
-        'Empl./appl.name' if is_sap else 'Name of employee or applicant': 'Employee',
-        'Att./abs. type' if is_sap else 'Att./Absence type': 'AA code'
+        'Empl./appl.name' if is_zalaris else 'Name of employee or applicant': 'Employee',
+        'Att./abs. type' if is_zalaris else 'Att./Absence type': 'AA code'
     }
     
-    sap_specific = {
+    zalaris_specific = {
         'A/A type text': 'AA text',
         'Number (unit)': 'Hours'
     }
     
-    df = df.rename(columns=common_renames | (sap_specific if is_sap else {}))
-    if is_sap:
+    df = df.rename(columns=common_renames | (zalaris_specific if is_zalaris else {}))
+    if is_zalaris:
         df['Hours'] = df['Hours'].str.replace(' H', '').astype(float)
         df['AA code'] = df['AA code'].astype(str)
-        export_to_excel(df[df['AA code'] == '800'],'data/output/clockinout_hours.xlsx') ##- save the clock in clock out rows
-        df = df[df['AA code'] != '800'] ##remove the clock in clock out columns'
+        export_to_excel(df[(df['AA code'] == '800') | (df['AA code'] == '9020')],'data/output/clockinout_hours.xlsx') ##- save the clock in clock out and delivery times rows
+        df = df[(df['AA code'] != '800') & (df['AA code'] != '9020')]  # Remove the clock in clock out and delivery times  columns
         export_to_excel(df,'data/output/wowbs_hours.xlsx') ##- actual wbs or wo hours
         for col in ['Start time', 'End time']:
             df[col] = pd.to_datetime(df[col], format='%H:%M:%S', errors='coerce').dt.time
@@ -44,7 +42,7 @@ def read_and_preprocess(file_path, is_sap=True):
     
     return df
 
-def create_daily_hours(df, is_sap=True):
+def create_daily_hours(df):
     values = ['Hours']
     agg_func = {'Hours': 'sum'}
     
@@ -96,9 +94,9 @@ def compare_hours(df1, df2, is_monthly=False):
                     'SAP Hours': hours_df2,
                     'Comparison': comparison
             })
-    
     results_df = pd.DataFrame(results)
-    return results_df
+    mask = (results_df['Zalaris Hours'] == 0) & (results_df['SAP Hours'] == -1) #ignore anything with zero hours and -1(ie not in SAP)
+    return results_df[~mask]
 def export_to_excel(df, filename):
     try:
         with pd.ExcelWriter(filename, engine='xlsxwriter') as writer:
@@ -110,9 +108,9 @@ def export_to_excel(df, filename):
 def main():
     results={}
     for source in ['SAP', 'Zalaris']:
-        df = read_and_preprocess(f'data/{source} Hours.csv', is_sap=(source == 'SAP'))
+        df = read_and_preprocess(f'data/{source} Hours.csv', is_zalaris=(source == 'Zalaris'))
         
-        daily_df = create_daily_hours(df, is_sap=(source == 'SAP'))
+        daily_df = create_daily_hours(df)
         export_to_excel(daily_df,f'data/output/{source} Hours_daily.xlsx')
         
         monthly_df = calculate_monthly_hours(df)
