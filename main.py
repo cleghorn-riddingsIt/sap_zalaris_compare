@@ -28,7 +28,7 @@ def read_and_preprocess(file_path, is_zalaris=True):
     if is_zalaris:
         df['Hours'] = df['Hours'].str.replace(' H', '').astype(float)
         df['AA code'] = df['AA code'].astype(str)
-        export_to_excel(df[(df['AA code'] == '800') | (df['AA code'] == '9020')],'data/output/clockinout_hours.xlsx') ##- save the clock in clock out and delivery times rows
+        export_to_excel(df[(df['AA code'] == '800') | (df['AA code'] == '9020')],'data/output/ignored_hours.xlsx') ##- save the clock in clock out and delivery times rows
         df = df[(df['AA code'] != '800') & (df['AA code'] != '9020')]  # Remove the clock in clock out and delivery times  columns
         export_to_excel(df,'data/output/wowbs_hours.xlsx') ##- actual wbs or wo hours
         for col in ['Start time', 'End time']:
